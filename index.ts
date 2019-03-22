@@ -12,7 +12,7 @@ async function main() {
     const webuntis = new Webuntis(
         "htbla linz leonding",
         "if150152",
-        "teamtengu1",
+        "",
         "mese.webuntis.com"
     )
     await webuntis.login()
