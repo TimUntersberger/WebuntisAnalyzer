@@ -104,6 +104,8 @@ async function main() {
                 }' that is ${info.percentage}%`
             )
         )
+
+    webuntis.logout()
 }
 
 main()

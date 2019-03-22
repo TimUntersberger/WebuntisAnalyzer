@@ -76,6 +76,22 @@ export default class Webuntis {
         return this.sessionInformation
     }
 
+    async logout(){
+        await this.request({
+            method: "POST",
+            url: `/WebUntis/jsonrpc.do?school=${this.school}`,
+            data: {
+                id: this.id,
+                method: "logout",
+                params: {},
+                jsonrpc: "2.0"
+            }
+        });
+        this.sessionInformation = null;
+        
+        return true;
+    }
+
     async getAbsences(start: number, end: number): Promise<any[]> {
         const url = `/WebUntis/api/classreg/absences/students?startDate=${start}&endDate=${end}&studentId=${
             this.sessionInformation.personId
