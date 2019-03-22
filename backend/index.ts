@@ -2,12 +2,12 @@ import Webuntis from "./webuntis"
 import * as express from "express"
 import * as cors from "cors"
 
-async function analyze(username: string, password: string) {
+async function analyze(username: string, password: string, school: string = "htbla linz leonding", domain: string = "mese.webuntis.com") {
     const webuntis = new Webuntis(
-        "htbla linz leonding",
+        school,
         username,
         password,
-        "mese.webuntis.com"
+        domain
     )
     await webuntis.login()
     const absences = await webuntis.getAbsences(20180910, 20190707)
@@ -101,8 +101,8 @@ const server = express()
 server.use(cors())
 
 server.get("/", async (req: express.Request, res: express.Response) => {
-    const { username, password } = req.query
-    res.json(await analyze(username, password))
+    const { username, password, school, domain } = req.query
+    res.json(await analyze(username, password, school, domain))
 })
 
 server.listen(8000)
