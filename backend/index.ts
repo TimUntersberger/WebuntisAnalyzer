@@ -1,18 +1,12 @@
 import Webuntis from "./webuntis"
+import * as express from "express"
+import * as cors from "cors"
 
-function intToDate(x) {
-    const str = new String(x)
-    const year = str.substr(0, 4)
-    const month = str.substr(4, 2)
-    const day = str.substr(6, 2)
-    return new Date(parseInt(year), parseInt(month), parseInt(day))
-}
-
-async function main() {
+async function analyze(username: string, password: string) {
     const webuntis = new Webuntis(
         "htbla linz leonding",
-        "if150152",
-        "",
+        username,
+        password,
         "mese.webuntis.com"
     )
     await webuntis.login()
@@ -21,6 +15,7 @@ async function main() {
     const allLessons = await webuntis.getTimetableForRange(20180910, 20190707)
     const subject_count = {}
     const missedSubject_count = {}
+    const result = {}
 
     allLessons.forEach(lesson => {
         if (lesson.code || !lesson.su[0]) return
@@ -82,13 +77,11 @@ async function main() {
         })
     )
 
-    console.log(
-        `You missed a total of ${Object.keys(missedSubject_count)
+    result["total"] = Object.keys(missedSubject_count)
             .map(key => missedSubject_count[key])
-            .reduce((x, y) => x + y)} hours`
-    )
+            .reduce((x, y) => x + y)
 
-    Object.keys(missedSubject_count)
+    result["infoPerSubject"] = Object.keys(missedSubject_count)
         .map(key => ({
             subject: subjects.filter(subject => subject.id == key)[0],
             count: missedSubject_count[key],
@@ -97,15 +90,19 @@ async function main() {
             )
         }))
         .sort((a, b) => b.count - a.count)
-        .forEach(info =>
-            console.log(
-                `You missed ${info.count} hours of '${
-                    info.subject.name
-                }' that is ${info.percentage}%`
-            )
-        )
 
     webuntis.logout()
+
+    return result
 }
 
-main()
+const server = express()
+
+server.use(cors())
+
+server.get("/", async (req: express.Request, res: express.Response) => {
+    const { username, password } = req.query
+    res.json(await analyze(username, password))
+})
+
+server.listen(8000)
