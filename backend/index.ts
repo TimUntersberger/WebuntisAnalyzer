@@ -2,13 +2,15 @@ import Webuntis from "./webuntis"
 import * as express from "express"
 import * as cors from "cors"
 
-async function analyze(username: string, password: string, school: string = "htbla linz leonding", domain: string = "mese.webuntis.com") {
-    const webuntis = new Webuntis(
-        school,
-        username,
-        password,
-        domain
-    )
+async function analyze(
+    username: string,
+    password: string,
+    school: string = "htbla linz leonding",
+    domain: string = "mese.webuntis.com"
+) {
+    const webuntis = new Webuntis(school, username, password, domain)
+
+    console.log(`User ${username} requested data`)
     await webuntis.login()
     const absences = await webuntis.getAbsences(20180910, 20190707)
     const subjects = await webuntis.getSubjects()
@@ -57,7 +59,10 @@ async function analyze(username: string, password: string, school: string = "htb
             }
             //handle absence longer than 1 day
             else {
-                const lessons = await webuntis.getTimetableForRange(absence.startDate, absence.endDate)
+                const lessons = await webuntis.getTimetableForRange(
+                    absence.startDate,
+                    absence.endDate
+                )
 
                 lessons.forEach(lesson => {
                     if (
@@ -78,8 +83,8 @@ async function analyze(username: string, password: string, school: string = "htb
     )
 
     result["total"] = Object.keys(missedSubject_count)
-            .map(key => missedSubject_count[key])
-            .reduce((x, y) => x + y)
+        .map(key => missedSubject_count[key])
+        .reduce((x, y) => x + y)
 
     result["infoPerSubject"] = Object.keys(missedSubject_count)
         .map(key => ({
