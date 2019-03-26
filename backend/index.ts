@@ -2,14 +2,20 @@ import Webuntis from "./webuntis"
 import * as express from "express"
 import * as cors from "cors"
 
-async function analyze(username: string, password: string, school: string = "htbla linz leonding", domain: string = "mese.webuntis.com") {
-    const webuntis = new Webuntis(
-        school,
-        username,
-        password,
-        domain
-    )
-    await webuntis.login()
+async function analyze(
+    username: string,
+    password: string,
+    school: string = "htbla linz leonding",
+    domain: string = "mese.webuntis.com"
+) {
+    const webuntis = new Webuntis(school, username, password, domain)
+    try {
+        await webuntis.login()
+    } catch (ex) {
+        return {
+            error: ex.message
+        }
+    }
     const absences = await webuntis.getAbsences(20180910, 20190707)
     const subjects = await webuntis.getSubjects()
     const allLessons = await webuntis.getTimetableForRange(20180910, 20190707)
@@ -17,14 +23,18 @@ async function analyze(username: string, password: string, school: string = "htb
     const missedSubject_count = {}
     const result = {}
 
+    const getSubjectById = id =>
+        subjects.filter(subject => subject.id === id)[0]
+
     allLessons.forEach(lesson => {
         if (lesson.code || !lesson.su[0]) return
 
-        const subjectId = lesson.su[0].id
+        const subject = getSubjectById(lesson.su[0].id)
 
-        if (!subject_count[subjectId]) subject_count[subjectId] = 0
+        if (!subject_count[subject.normalizedName])
+            subject_count[subject.normalizedName] = 0
 
-        subject_count[subjectId]++
+        subject_count[subject.normalizedName]++
     })
 
     await Promise.all(
@@ -37,53 +47,44 @@ async function analyze(username: string, password: string, school: string = "htb
                 isExcused
             } = absence
 
-            if (startDate === endDate) {
-                const lessons = await webuntis.getTimetableAt(startDate)
+            const lessons =
+                startDate === endDate
+                    ? await webuntis.getTimetableAt(startDate)
+                    : await webuntis.getTimetableForRange(
+                          absence.startDate,
+                          absence.endDate
+                      )
 
-                lessons.forEach(lesson => {
-                    if (
-                        lesson.startTime >= startTime &&
-                        lesson.endTime <= endTime &&
-                        !lesson.code
-                    ) {
-                        const missedSubjectId = lesson.su[0].id
+            lessons.forEach(lesson => {
+                if (
+                    lesson.startTime >= startTime &&
+                    lesson.endTime <= endTime &&
+                    !lesson.code
+                ) {
+                    const missedSubject = getSubjectById(lesson.su[0].id)
 
-                        if (!missedSubject_count[missedSubjectId])
-                            missedSubject_count[missedSubjectId] = 0
+                    if (!missedSubject_count[missedSubject.normalizedName])
+                        missedSubject_count[missedSubject.normalizedName] = 0
 
-                        missedSubject_count[missedSubjectId]++
-                    }
-                })
-            }
-            //handle absence longer than 1 day
-            else {
-                const lessons = await webuntis.getTimetableForRange(absence.startDate, absence.endDate)
+                    missedSubject_count[missedSubject.normalizedName]++
+                }
+            })
 
-                lessons.forEach(lesson => {
-                    if (
-                        lesson.startTime >= startTime &&
-                        lesson.endTime <= endTime &&
-                        !lesson.code
-                    ) {
-                        const missedSubjectId = lesson.su[0].id
-
-                        if (!missedSubject_count[missedSubjectId])
-                            missedSubject_count[missedSubjectId] = 0
-
-                        missedSubject_count[missedSubjectId]++
-                    }
-                })
-            }
+            if (!isExcused)
+                result["unexcused_absences_count"] =
+                    (result["unexcused_absences_count"] || 0) + 1
         })
     )
 
     result["total"] = Object.keys(missedSubject_count)
-            .map(key => missedSubject_count[key])
-            .reduce((x, y) => x + y)
+        .map(key => missedSubject_count[key])
+        .reduce((x, y) => x + y)
 
     result["infoPerSubject"] = Object.keys(missedSubject_count)
         .map(key => ({
-            subject: subjects.filter(subject => subject.id == key)[0],
+            subject: {
+                name: key
+            },
             count: missedSubject_count[key],
             percentage: Math.round(
                 (missedSubject_count[key] / subject_count[key]) * 100

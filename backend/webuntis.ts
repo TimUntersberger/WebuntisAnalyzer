@@ -7,6 +7,12 @@ export interface WebuntisSessionInformation {
     personId: number
 }
 
+export interface Subject {
+    name: string
+    normalizedName: string
+    id: number
+}
+
 export default class Webuntis {
     school: string
     schoolbase64: string
@@ -62,8 +68,7 @@ export default class Webuntis {
 
         if (typeof response.data !== "object")
             throw new Error("Failed to parse server response.")
-        if (!response.data.result)
-            throw new Error("Failed to login. " + JSON.stringify(response.data))
+        if (!response.data.result) throw new Error("Failed to login.")
         if (response.data.result.code)
             throw new Error(
                 "Login returned error code: " + response.data.result.code
@@ -76,7 +81,7 @@ export default class Webuntis {
         return this.sessionInformation
     }
 
-    async logout(){
+    async logout() {
         await this.request({
             method: "POST",
             url: `/WebUntis/jsonrpc.do?school=${this.school}`,
@@ -86,10 +91,10 @@ export default class Webuntis {
                 params: {},
                 jsonrpc: "2.0"
             }
-        });
-        this.sessionInformation = null;
-        
-        return true;
+        })
+        this.sessionInformation = null
+
+        return true
     }
 
     async getAbsences(start: number, end: number): Promise<any[]> {
@@ -128,12 +133,16 @@ export default class Webuntis {
             }
         })
 
-        if (!response.data.result) throw new Error("Server didn't returned any result.");
-        if (response.data.result.code) throw new Error("Server returned error code: " + response.data.result.code);
-        return response.data.result;
+        if (!response.data.result)
+            throw new Error("Server didn't returned any result.")
+        if (response.data.result.code)
+            throw new Error(
+                "Server returned error code: " + response.data.result.code
+            )
+        return response.data.result
     }
 
-    async getTimetableForRange(start: number, end: number){
+    async getTimetableForRange(start: number, end: number) {
         const response = await this.request({
             url: `/WebUntis/jsonrpc.do?school=${this.school}`,
             method: "POST",
@@ -153,13 +162,17 @@ export default class Webuntis {
             }
         })
 
-        if (!response.data.result) throw new Error("Server didn't returned any result.");
-        if (response.data.result.code) throw new Error("Server returned error code: " + response.data.result.code);
+        if (!response.data.result)
+            throw new Error("Server didn't returned any result.")
+        if (response.data.result.code)
+            throw new Error(
+                "Server returned error code: " + response.data.result.code
+            )
 
-        return response.data.result;
+        return response.data.result
     }
 
-    async getSubjects(){
+    async getSubjects(): Promise<Subject[]> {
         const response = await this.request({
             method: "POST",
             url: `/WebUntis/jsonrpc.do?school=${this.school}`,
@@ -174,10 +187,17 @@ export default class Webuntis {
             }
         })
 
-        if (!response.data.result) throw new Error("Server didn't returned any result.");
-        if (response.data.result.code) throw new Error("Server returned error code: " + response.data.result.code);
+        if (!response.data.result)
+            throw new Error("Server didn't returned any result.")
+        if (response.data.result.code)
+            throw new Error(
+                "Server returned error code: " + response.data.result.code
+            )
 
-        return response.data.result;
+        return response.data.result.map(subject => ({
+            ...subject,
+            normalizedName: subject.name.substr(1, subject.name.length - 1)
+        }))
     }
 
     buildCookies(): string {
