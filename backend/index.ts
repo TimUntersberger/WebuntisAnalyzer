@@ -106,4 +106,4 @@ server.get("/", async (req: express.Request, res: express.Response) => {
     res.json(await analyze(username, password, school, domain))
 })
 
-server.listen(8000)
+server.listen(8080)

@@ -5,6 +5,7 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
+	"build:backend": "tsc backend/index.ts",
         "start:backend": "ts-node backend/index.ts",
         "start:frontend": "parcel frontend/index.html",
         "build:frontend": "cd frontend && parcel build index.html && cd ..",
