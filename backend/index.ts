@@ -2,6 +2,8 @@ import Webuntis from "./webuntis"
 import * as express from "express"
 import * as cors from "cors"
 
+const users = {}
+
 async function analyze(
   username: string,
   password: string,
@@ -9,7 +11,30 @@ async function analyze(
   domain: string = "mese.webuntis.com"
 ) {
   const webuntis = new Webuntis(school, username, password, domain)
+
   console.log(`User ${username} requested data of ${school} on ${domain}`)
+
+  if (users[username]) {
+    const user = users[username]
+    if (user.attempts + 1 == 5) {
+      return {
+        error:
+          "This is your fifth attempt. Service denied to prevent account lockdown."
+      }
+    }
+    user.attempts++
+  } else {
+    const user = {
+      username,
+      school,
+      domain,
+      hours: -1,
+      updatedAt: -1,
+      attempts: 1
+    }
+    users[username] = user
+  }
+
   try {
     await webuntis.login()
   } catch (ex) {
@@ -89,6 +114,11 @@ async function analyze(
 
   webuntis.logout()
 
+  const user = users[username]
+  user.attempts = 0
+  user.hours = result["total"]
+  user.updatedAt = Date.now()
+
   return result
 }
 
@@ -100,5 +130,20 @@ server.get("/", async (req: express.Request, res: express.Response) => {
   const { username, password, school, domain } = req.query
   res.json(await analyze(username, password, school, domain))
 })
+
+server.get(
+  "/leaderboard",
+  async (req: express.Request, res: express.Response) => {
+    res.json(
+      Object.values(users)
+        .sort((a: any, b: any) => b.hours - a.hours)
+        .map((user: any) => ({
+          username: user.username,
+          hours: user.hours,
+          updatedAt: user.updatedAt
+        }))
+    )
+  }
+)
 
 server.listen(8080)
