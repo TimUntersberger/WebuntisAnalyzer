@@ -10,12 +10,13 @@ async function analyze(
 ) {
     const webuntis = new Webuntis(school, username, password, domain)
     try {
-        await webuntis.login()
+    	await webuntis.login()
     } catch (ex) {
         return {
             error: ex.message
         }
     }
+    console.log(`User ${username} requested data of ${school} on ${domain}`);
     const absences = await webuntis.getAbsences(20180910, 20190707)
     const subjects = await webuntis.getSubjects()
     const allLessons = await webuntis.getTimetableForRange(20180910, 20190707)
