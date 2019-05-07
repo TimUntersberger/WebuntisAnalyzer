@@ -9,14 +9,15 @@ async function analyze(
     domain: string = "mese.webuntis.com"
 ) {
     const webuntis = new Webuntis(school, username, password, domain)
+    console.log(`User ${username} requested data of ${school} on ${domain})
     try {
     	await webuntis.login()
-    } catch (ex) {
+	} catch (ex) {
+	console.error(ex.message);
         return {
             error: ex.message
         }
     }
-    console.log(`User ${username} requested data of ${school} on ${domain}`);
     const absences = await webuntis.getAbsences(20180910, 20190707)
     const subjects = await webuntis.getSubjects()
     const allLessons = await webuntis.getTimetableForRange(20180910, 20190707)
