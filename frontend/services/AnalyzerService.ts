@@ -7,7 +7,7 @@ export default {
       baseUrl = "http://webuntis-analyzer.baaka.io"
     }
     const response = await Axios.get(
-      `${baseUrl}?username=${username}&password=${password}`
+      `${baseUrl}?username=${username}&password=${btoa(password)}`
     )
     return response.data
   }

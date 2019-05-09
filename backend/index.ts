@@ -10,7 +10,7 @@ async function analyze(
   school: string = "htbla linz leonding",
   domain: string = "mese.webuntis.com"
 ) {
-  const webuntis = new Webuntis(school, username, password, domain)
+  const webuntis = new Webuntis(school, username, new Buffer(password, 'base64').toString(), domain)
 
   console.log(`User ${username} requested data of ${school} on ${domain}`)
 
