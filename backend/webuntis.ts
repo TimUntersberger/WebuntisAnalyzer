@@ -97,6 +97,21 @@ export default class Webuntis {
         return true
     }
 
+    async getProfile() {
+        const response = await this.request({
+            method: "GET",
+            url: `/WebUntis/api/profile/general`,
+            headers: {
+                Cookie: this.buildCookies()
+            }
+        })
+
+        if (typeof response.data !== "object")
+            throw new Error("Failed to parse server response.")
+
+        return response.data.data.profile
+    }
+
     async getAbsences(start: number, end: number): Promise<any[]> {
         const url = `/WebUntis/api/classreg/absences/students?startDate=${start}&endDate=${end}&studentId=${
             this.sessionInformation.personId
