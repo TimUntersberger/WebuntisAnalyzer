@@ -30,7 +30,14 @@
         <v-btn type="submit" color="blue">login</v-btn>
       </v-form>
       <v-progress-circular v-else-if="this.isLoading" indeterminate color="primary"></v-progress-circular>
-      <div v-else-if="isLeaderboardVisible">leaderboard</div>
+      <div v-else-if="isLeaderboardVisible" class="leaderboard">
+        <v-list>
+          <v-list-tile v-for="(user, index) in leaderboard" v-bind:key="index">
+            <span class="leaderboard-lastname">{{index + 1}}. {{user.lastName}}</span>
+            <span class="leaderboard-hours">{{user.hours}}</span>
+          </v-list-tile>
+        </v-list>
+      </div>
       <div class="result" v-else>
         <h1>Total hours missed {{result.total}}</h1>
         <h3
@@ -55,7 +62,7 @@
 </template>
 
 <script lang="ts">
-import AnalyzerService from "../services/AnalyzerService";
+import WebuntisService from "../services/WebuntisService";
 
 export default {
   name: "app",
@@ -69,7 +76,8 @@ export default {
       school: "htbla linz leonding",
       username: "",
       password: "",
-      result: {}
+      result: {},
+      leaderboard: []
     };
   },
   methods: {
@@ -81,11 +89,52 @@ export default {
     showLeaderboard() {
       this.isAnalyzed = false;
       this.result = {};
-      this.isLeaderboardVisible = true;
+      WebuntisService.getLeaderboard().then(result => {
+        this.leaderboard = [
+          {
+            _id: "5cd450259baceb4dfcab179e",
+            username: "if150152",
+            school: "htbla linz leonding",
+            domain: "mese.webuntis.com",
+            hours: 135,
+            updatedAt: 1557418022694,
+            attempts: 0,
+            lastName: "Untersberger",
+            department: "IT",
+            gender: "MALE"
+          },
+          {
+            _id: "5cd450259baceb4dfcab179e",
+            username: "if150152",
+            school: "htbla linz leonding",
+            domain: "mese.webuntis.com",
+            hours: 120,
+            updatedAt: 1557418022694,
+            attempts: 0,
+            lastName: "Untersberger2",
+            department: "IT",
+            gender: "MALE"
+          },
+          {
+            _id: "5cd450259baceb4dfcab179e",
+            username: "if150152",
+            school: "htbla linz leonding",
+            domain: "mese.webuntis.com",
+            hours: 97,
+            updatedAt: 1557418022694,
+            attempts: 0,
+            lastName: "Jung",
+            department: "IT",
+            gender: "MALE"
+          }
+        ];
+        //this.leaderboard = result;
+        this.isLeaderboardVisible = true;
+      });
     },
     login() {
       this.isLoading = true;
-      AnalyzerService.analyze(
+      WebuntisService.analyze(
         this.username,
         this.password,
         this.school,
@@ -106,6 +155,17 @@ export default {
 </script>
 
 <style lang="scss">
+.leaderboard {
+  width: 100%;
+  padding: 0 400px;
+}
+
+.leaderboard-lastname {
+  font-size: 2em;
+}
+.leaderboard-hours {
+  margin-left: auto;
+}
 #app {
   font-family: Roboto, "Courier New", Courier, monospace;
   height: 100vh;
