@@ -23,6 +23,15 @@ async function main() {
 
         console.log(`User ${username} requested data of ${school} on ${domain}`)
 
+        try {
+            await webuntis.login()
+        } catch (ex) {
+            console.error(ex.message)
+            return {
+                error: ex.message
+            }
+        }
+
         const u = await users.findOne({ username })
 
         if (!u) {
@@ -32,31 +41,11 @@ async function main() {
                 domain,
                 hours: -1,
                 updatedAt: -1,
-                attempts: 1,
                 lastName: null,
                 department: null,
                 gender: null
             })
-        } else {
-            if (u.attemps + 1 == 5)
-                return {
-                    error:
-                        "This is your fifth attempt. Service denied to prevent account lockdown."
-                }
-            users.updateOne(
-                { username },
-                { $set: { attempts: u.attempts + 1 } }
-            )
-        }
 
-        try {
-            await webuntis.login()
-        } catch (ex) {
-            console.error(ex.message)
-            return {
-                error: ex.message
-            }
-        }
         const profile = await webuntis.getProfile()
         const absences = await webuntis.getAbsences(20180910, 20190707)
         const subjects = await webuntis.getSubjects()
@@ -156,7 +145,6 @@ async function main() {
             { username },
             {
                 $set: {
-                    attempts: 0,
                     hours: result["total"],
                     updatedAt: Date.now()
                 }

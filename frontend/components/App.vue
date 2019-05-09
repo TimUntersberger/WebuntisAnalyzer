@@ -90,45 +90,7 @@ export default {
       this.isAnalyzed = false;
       this.result = {};
       WebuntisService.getLeaderboard().then(result => {
-        this.leaderboard = [
-          {
-            _id: "5cd450259baceb4dfcab179e",
-            username: "if150152",
-            school: "htbla linz leonding",
-            domain: "mese.webuntis.com",
-            hours: 135,
-            updatedAt: 1557418022694,
-            attempts: 0,
-            lastName: "Untersberger",
-            department: "IT",
-            gender: "MALE"
-          },
-          {
-            _id: "5cd450259baceb4dfcab179e",
-            username: "if150152",
-            school: "htbla linz leonding",
-            domain: "mese.webuntis.com",
-            hours: 120,
-            updatedAt: 1557418022694,
-            attempts: 0,
-            lastName: "Untersberger2",
-            department: "IT",
-            gender: "MALE"
-          },
-          {
-            _id: "5cd450259baceb4dfcab179e",
-            username: "if150152",
-            school: "htbla linz leonding",
-            domain: "mese.webuntis.com",
-            hours: 97,
-            updatedAt: 1557418022694,
-            attempts: 0,
-            lastName: "Jung",
-            department: "IT",
-            gender: "MALE"
-          }
-        ];
-        //this.leaderboard = result;
+        this.leaderboard = result;
         this.isLeaderboardVisible = true;
       });
     },
