@@ -9,7 +9,7 @@
         "start:backend": "ts-node backend/index.ts",
         "start:frontend": "parcel frontend/index.html",
         "build:frontend": "cd frontend && parcel build index.html && cd ..",
-        "deploy:frontend": "surge frontend/dist webuntis-analyzer.surge.sh"
+        "deploy:frontend": "cp frontend/dist/index.html frontend/dist/200.html && surge frontend/dist webuntis-analyzer.surge.sh"
     },
     "keywords": [],
     "author": "",
