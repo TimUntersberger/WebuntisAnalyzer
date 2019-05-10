@@ -45,7 +45,7 @@
         >{{result.unexcused_absences_count}} unexcused Absences</h3>
         <h2>Attendence</h2>
         <div class="result-subjects">
-          <v-card class="card" v-for="info in result.infoPerSubject">
+          <v-card class="card" v-for="(info, index) in result.infoPerSubject" v-bind:key="index">
             <h3>{{info.subject.name}}</h3>
             <p></p>
             <v-progress-circular

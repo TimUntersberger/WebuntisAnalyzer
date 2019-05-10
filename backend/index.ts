@@ -25,26 +25,25 @@ async function main() {
 
         try {
             await webuntis.login()
+            const u = await users.findOne({ username })
+
+            if (!u)
+                users.insertOne({
+                    username,
+                    school,
+                    domain,
+                    hours: -1,
+                    updatedAt: -1,
+                    lastName: null,
+                    department: null,
+                    gender: null
+                })
         } catch (ex) {
             console.error(ex.message)
             return {
                 error: ex.message
             }
         }
-
-        const u = await users.findOne({ username })
-
-        if (!u) {
-            users.insertOne({
-                username,
-                school,
-                domain,
-                hours: -1,
-                updatedAt: -1,
-                lastName: null,
-                department: null,
-                gender: null
-            })
 
         const profile = await webuntis.getProfile()
         const absences = await webuntis.getAbsences(20180910, 20190707)
