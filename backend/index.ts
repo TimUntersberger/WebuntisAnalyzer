@@ -2,6 +2,7 @@ import Webuntis from "./webuntis"
 import * as express from "express"
 import * as cors from "cors"
 import * as mongo from "mongodb"
+import { Base64 } from "js-base64"
 
 async function main() {
     const client = await mongo.connect("mongodb://localhost:27017")
@@ -17,7 +18,7 @@ async function main() {
         const webuntis = new Webuntis(
             school,
             username,
-            Buffer.from(password, "base64").toString(),
+            Base64.decode(password),
             domain
         )
 
