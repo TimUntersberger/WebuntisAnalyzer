@@ -13,6 +13,7 @@ export default {
         school: string,
         domain: string
     ) {
+        //havara
         const response = await Axios.get(
             `${baseUrl}?username=${username}&password=${Base64.encode(
                 password
