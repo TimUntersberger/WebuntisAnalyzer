@@ -6,7 +6,7 @@
         <v-btn flat @click="showLeaderboard()">Leaderboard</v-btn>
       </v-toolbar-items>
     </v-toolbar>
-    <div class="content">
+    <div :class="{'content': true, 'content-large': !($vuetify.breakpoint.xs)}">
       <v-snackbar v-model="isSnackbarVisible">
         {{result.error}}
         <v-btn color="primary" flat @click="isSnackbarVisible = false">Close</v-btn>
@@ -119,7 +119,7 @@ export default {
 <style lang="scss">
 .leaderboard {
   width: 100%;
-  padding: 0 400px;
+  /*padding: 0 400px;*/
 }
 
 .leaderboard-lastname {
@@ -132,8 +132,10 @@ export default {
   font-family: Roboto, "Courier New", Courier, monospace;
   height: 100vh;
 }
-.content {
+.content-large {
   padding: 30px 200px;
+}
+.content {
   display: flex;
   justify-content: center;
   align-items: center;
