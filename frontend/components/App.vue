@@ -134,9 +134,7 @@ export default {
   font-family: Roboto, "Courier New", Courier, monospace;
   height: 100vh;
 }
-.content-large {
-  padding: 30px 200px;
-}
+
 .content {
   display: flex;
   justify-content: center;
