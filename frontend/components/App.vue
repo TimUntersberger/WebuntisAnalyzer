@@ -6,7 +6,9 @@
         <v-btn flat @click="showLeaderboard()">Leaderboard</v-btn>
       </v-toolbar-items>
     </v-toolbar>
-    <div :class="{'content': true, 'content-large': !($vuetify.breakpoint.xs)}">
+    <div
+      :class="{'content': true, 'content-small': ($vuetify.breakpoint.sm), 'content-extra-small': ($vuetify.breakpoint.xs)}"
+    >
       <v-snackbar v-model="isSnackbarVisible">
         {{result.error}}
         <v-btn color="primary" flat @click="isSnackbarVisible = false">Close</v-btn>
@@ -132,13 +134,18 @@ export default {
   font-family: Roboto, "Courier New", Courier, monospace;
   height: 100vh;
 }
-.content-large {
-  padding: 30px 200px;
-}
+
 .content {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 30px 200px;
+}
+.content-small {
+  padding: 30px 50px;
+}
+.content-extra-small {
+  padding: 30px 0px;
 }
 .form {
   width: 400px;
