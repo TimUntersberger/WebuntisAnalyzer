@@ -195,13 +195,14 @@ async function main() {
   server.get(
     "/classes",
     async (req: express.Request, res: express.Response) => {
-      res.json(
-        await users
+      const classes = await users
           .aggregate([{ $group: { _id: "$className" } }])
           .toArray()
           .then(data => {
-            return Promise.resolve(data.map(x => x._id))
-          })
+	  return Promise.resolve(data.filter(x => x._id !== null).map(x => x._id))
+	    })
+	  res.json(
+	  classes
       )
     }
   )
