@@ -185,7 +185,7 @@ async function main() {
       res.json(
         await users
           .find()
-          .sort({ hours: 1 })
+          .sort({ hours: -1 })
           .filter(filter)
           .toArray()
       )
