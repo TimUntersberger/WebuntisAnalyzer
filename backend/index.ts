@@ -27,18 +27,30 @@ async function main() {
     try {
       await webuntis.login()
       const u = await users.findOne({ username })
+      const className = await webuntis.getClassName()
 
       if (!u)
         users.insertOne({
           username,
           school,
           domain,
+          className,
           hours: -1,
           updatedAt: -1,
           lastName: null,
           department: null,
           gender: null
         })
+      else if (u.className === undefined) {
+        users.updateOne(
+          { username },
+          {
+            $set: {
+              className
+            }
+          }
+        )
+      }
     } catch (ex) {
       console.error(ex.message)
       return {
@@ -108,7 +120,7 @@ async function main() {
             lesson.startTime >= startTime &&
             lesson.endTime <= endTime
           ) {
-            console.log(lesson)
+            // idk was for debuggin i think
           }
         })
 
@@ -163,12 +175,47 @@ async function main() {
   server.get(
     "/leaderboard",
     async (req: express.Request, res: express.Response) => {
+      const { school, className } = req.query
+      const filter = {}
+
+      if (school) filter["school"] = school
+
+      if (className) filter["className"] = className
+
       res.json(
-        Object.values(
-          (await users.find().toArray()).sort(
-            (a: any, b: any) => b.hours - a.hours
-          )
-        )
+        await users
+          .find()
+          .sort({ hours: 1 })
+          .filter(filter)
+          .toArray()
+      )
+    }
+  )
+
+  server.get(
+    "/classes",
+    async (req: express.Request, res: express.Response) => {
+      res.json(
+        await users
+          .aggregate([{ $group: { _id: "$className" } }])
+          .toArray()
+          .then(data => {
+            return Promise.resolve(data.map(x => x._id))
+          })
+      )
+    }
+  )
+
+  server.get(
+    "/schools",
+    async (req: express.Request, res: express.Response) => {
+      res.json(
+        await users
+          .aggregate([{ $group: { _id: "$school" } }])
+          .toArray()
+          .then(data => {
+            return Promise.resolve(data.map(x => x._id))
+          })
       )
     }
   )

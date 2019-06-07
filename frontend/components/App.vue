@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <v-app id="app">
     <v-toolbar dense flat>
       <v-toolbar-items>
         <v-btn flat @click="analyze()">Analyze</v-btn>
@@ -33,6 +33,24 @@
       </v-form>
       <v-progress-circular v-else-if="this.isLoading" indeterminate color="primary"></v-progress-circular>
       <div v-else-if="isLeaderboardVisible" class="leaderboard">
+        <div class="leaderboard-dropdowns">
+          <v-autocomplete
+            class="leaderboard-dropdown"
+            :items="schools"
+            label="Select School"
+            persistent-hint
+            @change="loadLeaderboard"
+            v-model="selectedSchool"
+          ></v-autocomplete>
+          <v-autocomplete
+            class="leaderboard-dropdown"
+            :items="classes"
+            label="Select Class"
+            persistent-hint
+            @change="loadLeaderboard"
+            v-model="selectedClass"
+          ></v-autocomplete>
+        </div>
         <v-list>
           <v-list-tile v-for="(user, index) in leaderboard" v-bind:key="index">
             <span class="leaderboard-lastname">{{index + 1}}. {{user.lastName}}</span>
@@ -59,7 +77,7 @@
           </v-card>
         </div>
       </div>
-    </div>
+    </v-app>
   </div>
 </template>
 
@@ -79,6 +97,10 @@ export default {
       username: "",
       password: "",
       result: {},
+      selectedClass: null,
+      selectedSchool: null,
+      classes: [],
+      schools: [],
       leaderboard: []
     };
   },
@@ -88,13 +110,25 @@ export default {
       this.isAnalyzed = false;
       this.result = {};
     },
+    loadLeaderboard() {
+      WebuntisService.getLeaderboard({
+        className: this.selectedClass,
+        school: this.selectedSchool
+      }).then(result => {
+        this.leaderboard = result;
+      });
+    },
     showLeaderboard() {
       this.isAnalyzed = false;
       this.result = {};
-      WebuntisService.getLeaderboard().then(result => {
-        this.leaderboard = result;
-        this.isLeaderboardVisible = true;
+      WebuntisService.getClassNames().then(names => {
+        this.classes = names;
       });
+      WebuntisService.getSchools().then(names => {
+        this.schools = names;
+      });
+      this.loadLeaderboard();
+      this.isLeaderboardVisible = true;
     },
     login() {
       this.isLoading = true;
@@ -118,12 +152,24 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .leaderboard {
   min-width: 100%;
-  /*padding: 0 400px;*/
 }
-
+.leaderboard-dropdowns {
+  display: flex;
+}
+.leaderboard-dropdown {
+  max-width: 300px;
+  &:first-child {
+    margin-left: 10px;
+    margin-right: 5px;
+  }
+  &:last-child {
+    margin-left: 5px;
+    margin-right: 10px;
+  }
+}
 .leaderboard-lastname {
   font-size: 2em;
 }
@@ -133,6 +179,7 @@ export default {
 #app {
   font-family: Roboto, "Courier New", Courier, monospace;
   height: 100vh;
+  background-color: white;
 }
 
 .content {
@@ -150,6 +197,7 @@ export default {
 .form {
   width: 400px;
   height: 400px;
+  padding: 10px;
 
   h1 {
     margin-bottom: 60px;

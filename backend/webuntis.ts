@@ -2,228 +2,243 @@ import Axios, { AxiosAdapter, AxiosInstance } from "axios"
 import * as CookieBuilder from "cookie"
 
 export interface WebuntisSessionInformation {
-    sessionId: string
-    personType: number
-    personId: number
+  sessionId: string
+  personType: number
+  personId: number
 }
 
 export interface Subject {
-    name: string
-    normalizedName: string
-    id: number
+  name: string
+  normalizedName: string
+  id: number
 }
 
 export default class Webuntis {
-    school: string
-    schoolbase64: string
-    username: string
-    password: string
+  school: string
+  schoolbase64: string
+  username: string
+  password: string
+  domain: string
+  baseUrl: string
+  id: string
+
+  request: AxiosInstance
+  sessionInformation: WebuntisSessionInformation
+  cookies: string[]
+
+  constructor(
+    school: string,
+    username: string,
+    password: string,
     domain: string
-    baseUrl: string
-    id: string
+  ) {
+    this.school = school
+    this.schoolbase64 = "_" + Buffer.from(school).toString("base64")
+    this.username = username
+    this.password = password
+    this.domain = domain
+    this.baseUrl = `https://${domain}/`
+    this.id = "test"
 
-    request: AxiosInstance
-    sessionInformation: WebuntisSessionInformation
-    cookies: string[]
+    this.cookies = []
+    this.request = Axios.create({
+      baseURL: this.baseUrl,
+      maxRedirects: 0,
+      validateStatus: function(status) {
+        return status >= 200 && status < 303 // default
+      }
+    })
+  }
 
-    constructor(
-        school: string,
-        username: string,
-        password: string,
-        domain: string
-    ) {
-        this.school = school
-        this.schoolbase64 = "_" + Buffer.from(school).toString("base64")
-        this.username = username
-        this.password = password
-        this.domain = domain
-        this.baseUrl = `https://${domain}/`
-        this.id = "test"
+  async login(): Promise<WebuntisSessionInformation> {
+    const response = await this.request({
+      method: "POST",
+      url: `/WebUntis/jsonrpc.do?school=${this.school}`,
+      data: {
+        id: this.id,
+        method: "authenticate",
+        params: {
+          user: this.username,
+          password: this.password,
+          client: this.id
+        },
+        jsonrpc: "2.0"
+      }
+    })
 
-        this.cookies = []
-        this.request = Axios.create({
-            baseURL: this.baseUrl,
-            maxRedirects: 0,
-            validateStatus: function(status) {
-                return status >= 200 && status < 303 // default
-            }
-        })
-    }
+    if (typeof response.data !== "object")
+      throw new Error("Failed to parse server response.")
+    if (!response.data.result) throw new Error("Failed to login.")
+    if (response.data.result.code)
+      throw new Error("Login returned error code: " + response.data.result.code)
+    if (!response.data.result.sessionId)
+      throw new Error("Failed to login. No session id.")
 
-    async login(): Promise<WebuntisSessionInformation> {
-        const response = await this.request({
-            method: "POST",
-            url: `/WebUntis/jsonrpc.do?school=${this.school}`,
-            data: {
-                id: this.id,
-                method: "authenticate",
-                params: {
-                    user: this.username,
-                    password: this.password,
-                    client: this.id
-                },
-                jsonrpc: "2.0"
-            }
-        })
+    this.sessionInformation = response.data.result
 
-        if (typeof response.data !== "object")
-            throw new Error("Failed to parse server response.")
-        if (!response.data.result) throw new Error("Failed to login.")
-        if (response.data.result.code)
-            throw new Error(
-                "Login returned error code: " + response.data.result.code
-            )
-        if (!response.data.result.sessionId)
-            throw new Error("Failed to login. No session id.")
+    return this.sessionInformation
+  }
 
-        this.sessionInformation = response.data.result
+  async logout() {
+    await this.request({
+      method: "POST",
+      url: `/WebUntis/jsonrpc.do?school=${this.school}`,
+      data: {
+        id: this.id,
+        method: "logout",
+        params: {},
+        jsonrpc: "2.0"
+      }
+    })
+    this.sessionInformation = null
 
-        return this.sessionInformation
-    }
+    return true
+  }
 
-    async logout() {
-        await this.request({
-            method: "POST",
-            url: `/WebUntis/jsonrpc.do?school=${this.school}`,
-            data: {
-                id: this.id,
-                method: "logout",
-                params: {},
-                jsonrpc: "2.0"
-            }
-        })
-        this.sessionInformation = null
+  async getProfile() {
+    const response = await this.request({
+      method: "GET",
+      url: `/WebUntis/api/profile/general`,
+      headers: {
+        Cookie: this.buildCookies()
+      }
+    })
 
-        return true
-    }
+    if (typeof response.data !== "object")
+      throw new Error("Failed to parse server response.")
 
-    async getProfile() {
-        const response = await this.request({
-            method: "GET",
-            url: `/WebUntis/api/profile/general`,
-            headers: {
-                Cookie: this.buildCookies()
-            }
-        })
+    return response.data.data.profile
+  }
 
-        if (typeof response.data !== "object")
-            throw new Error("Failed to parse server response.")
+  async getClassName() {
+    const response = await this.request({
+      method: "GET",
+      url:
+        "https://mese.webuntis.com/WebUntis/api/public/timetable/weekly/pageconfig?type=1",
+      headers: {
+        Cookie: this.buildCookies()
+      }
+    })
 
-        return response.data.data.profile
-    }
+    if (typeof response.data !== "object")
+      throw new Error("Failed to parse server response.")
 
-    async getAbsences(start: number, end: number): Promise<any[]> {
-        const url = `/WebUntis/api/classreg/absences/students?startDate=${start}&endDate=${end}&studentId=${
-            this.sessionInformation.personId
-        }&excuseStatusId=-1`
+    const data = response.data.data
+    const classId = data.selectedElementId
+    const className = data.elements.find(x => x.id === classId).displayname
 
-        const response = await this.request({
-            method: "GET",
-            url,
-            headers: {
-                Cookie: this.buildCookies()
-            }
-        })
+    return className
+  }
 
-        return response.data.data.absences
-    }
+  async getAbsences(start: number, end: number): Promise<any[]> {
+    const url = `/WebUntis/api/classreg/absences/students?startDate=${start}&endDate=${end}&studentId=${
+      this.sessionInformation.personId
+    }&excuseStatusId=-1`
 
-    async getTimetableAt(date: number) {
-        const response = await this.request({
-            url: `/WebUntis/jsonrpc.do?school=${this.school}`,
-            method: "POST",
-            headers: {
-                Cookie: this.buildCookies()
-            },
-            data: {
-                id: this.id,
-                method: "getTimetable",
-                params: {
-                    id: this.sessionInformation.personId,
-                    type: this.sessionInformation.personType,
-                    startDate: date,
-                    endDate: date
-                },
-                jsonrpc: "2.0"
-            }
-        })
+    const response = await this.request({
+      method: "GET",
+      url,
+      headers: {
+        Cookie: this.buildCookies()
+      }
+    })
 
-        if (!response.data.result)
-            throw new Error("Server didn't returned any result.")
-        if (response.data.result.code)
-            throw new Error(
-                "Server returned error code: " + response.data.result.code
-            )
-        return response.data.result
-    }
+    return response.data.data.absences
+  }
 
-    async getTimetableForRange(start: number, end: number) {
-        const response = await this.request({
-            url: `/WebUntis/jsonrpc.do?school=${this.school}`,
-            method: "POST",
-            headers: {
-                Cookie: this.buildCookies()
-            },
-            data: {
-                id: this.id,
-                method: "getTimetable",
-                params: {
-                    id: this.sessionInformation.personId,
-                    type: this.sessionInformation.personType,
-                    startDate: start,
-                    endDate: end
-                },
-                jsonrpc: "2.0"
-            }
-        })
+  async getTimetableAt(date: number) {
+    const response = await this.request({
+      url: `/WebUntis/jsonrpc.do?school=${this.school}`,
+      method: "POST",
+      headers: {
+        Cookie: this.buildCookies()
+      },
+      data: {
+        id: this.id,
+        method: "getTimetable",
+        params: {
+          id: this.sessionInformation.personId,
+          type: this.sessionInformation.personType,
+          startDate: date,
+          endDate: date
+        },
+        jsonrpc: "2.0"
+      }
+    })
 
-        if (!response.data.result)
-            throw new Error("Server didn't returned any result.")
-        if (response.data.result.code)
-            throw new Error(
-                "Server returned error code: " + response.data.result.code
-            )
+    if (!response.data.result)
+      throw new Error("Server didn't returned any result.")
+    if (response.data.result.code)
+      throw new Error(
+        "Server returned error code: " + response.data.result.code
+      )
+    return response.data.result
+  }
 
-        return response.data.result
-    }
+  async getTimetableForRange(start: number, end: number) {
+    const response = await this.request({
+      url: `/WebUntis/jsonrpc.do?school=${this.school}`,
+      method: "POST",
+      headers: {
+        Cookie: this.buildCookies()
+      },
+      data: {
+        id: this.id,
+        method: "getTimetable",
+        params: {
+          id: this.sessionInformation.personId,
+          type: this.sessionInformation.personType,
+          startDate: start,
+          endDate: end
+        },
+        jsonrpc: "2.0"
+      }
+    })
 
-    async getSubjects(): Promise<Subject[]> {
-        const response = await this.request({
-            method: "POST",
-            url: `/WebUntis/jsonrpc.do?school=${this.school}`,
-            headers: {
-                Cookie: this.buildCookies()
-            },
-            data: {
-                id: this.id,
-                method: "getSubjects",
-                params: {},
-                jsonrpc: "2.0"
-            }
-        })
+    if (!response.data.result)
+      throw new Error("Server didn't returned any result.")
+    if (response.data.result.code)
+      throw new Error(
+        "Server returned error code: " + response.data.result.code
+      )
 
-        if (!response.data.result)
-            throw new Error("Server didn't returned any result.")
-        if (response.data.result.code)
-            throw new Error(
-                "Server returned error code: " + response.data.result.code
-            )
+    return response.data.result
+  }
 
-        return response.data.result.map(subject => ({
-            ...subject,
-            normalizedName: subject.name.substr(1, subject.name.length - 1)
-        }))
-    }
+  async getSubjects(): Promise<Subject[]> {
+    const response = await this.request({
+      method: "POST",
+      url: `/WebUntis/jsonrpc.do?school=${this.school}`,
+      headers: {
+        Cookie: this.buildCookies()
+      },
+      data: {
+        id: this.id,
+        method: "getSubjects",
+        params: {},
+        jsonrpc: "2.0"
+      }
+    })
 
-    buildCookies(): string {
-        let cookies = []
-        cookies.push(
-            CookieBuilder.serialize(
-                "JSESSIONID",
-                this.sessionInformation.sessionId
-            )
-        )
-        cookies.push(CookieBuilder.serialize("schoolname", this.schoolbase64))
-        return cookies.join("; ")
-    }
+    if (!response.data.result)
+      throw new Error("Server didn't returned any result.")
+    if (response.data.result.code)
+      throw new Error(
+        "Server returned error code: " + response.data.result.code
+      )
+
+    return response.data.result.map(subject => ({
+      ...subject,
+      normalizedName: subject.name.substr(1, subject.name.length - 1)
+    }))
+  }
+
+  buildCookies(): string {
+    let cookies = []
+    cookies.push(
+      CookieBuilder.serialize("JSESSIONID", this.sessionInformation.sessionId)
+    )
+    cookies.push(CookieBuilder.serialize("schoolname", this.schoolbase64))
+    return cookies.join("; ")
+  }
 }
