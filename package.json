@@ -20,7 +20,7 @@
     "@types/js-base64": "^2.3.1",
     "@types/mongodb": "^3.1.26",
     "@types/node": "^11.11.4",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "babel-polyfill": "^6.26.0",
     "cookie": "^0.3.1",
     "cors": "^2.8.5",
