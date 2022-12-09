@@ -24,7 +24,7 @@
     "babel-polyfill": "^6.26.0",
     "cookie": "^0.3.1",
     "cors": "^2.8.5",
-    "express": "^4.16.4",
+    "express": "^4.17.3",
     "js-base64": "^2.5.1",
     "mongodb": "^3.2.4",
     "parcel": "^1.12.3",
